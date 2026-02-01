@@ -27,7 +27,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   //check the user existance
-  const existedUser = UserModel.findOne({
+  const existedUser = await UserModel.findOne({
     $or: [{ username }, { email }],
   });
 
@@ -35,23 +35,24 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User already exist");
   }
 
-  const avatarLocalPath = req?.files.avatar[0]?.path;
-  const coverImgLocalPath = req?.files.coverImage[0]?.path;
+  const avatarLocalPath = req.files?.avatar?.[0]?.path;
+  const coverImgLocalPath = req.files?.coverImage?.[0]?.path;
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required");
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath); //returns url
-  if (coverImgLocalPath) {
-    const coverImage = await uploadOnCloudinary(coverImgLocalPath);
-  }
+  const coverImage =
+    coverImgLocalPath !== null
+      ? await uploadOnCloudinary(coverImgLocalPath)
+      : null;
 
   if (!avatar) {
     throw new ApiError(400, "Avatar is required");
   }
 
-  const user = await UserModel.create({
+  let user = await UserModel.create({
     fullName,
     username: username.toLowerCase(),
     avatar,
@@ -60,14 +61,13 @@ const registerUser = asyncHandler(async (req, res) => {
     coverImage: coverImage || "",
   });
 
-  if (!user._id) {
-    throw new ApiError(400, "Faild to register. Please try again!");
-  }
+  const createdUser = await UserModel.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
-  console.log(user);
   return res
     .status(201)
-    .json(new ApiResponse(200, user, "User created successfully"));
+    .json(new ApiResponse(200, createdUser, "User created successfully"));
 });
 
 export { registerUser };

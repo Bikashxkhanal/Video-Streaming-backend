@@ -15,7 +15,7 @@ app.use(
 app.use(
   express.json({
     // for file submmited like photos
-    limit: "16kb",
+    limit: "30kb",
   })
 );
 
