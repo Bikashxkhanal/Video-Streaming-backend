@@ -50,7 +50,7 @@ userRouter
 
 userRouter.route("/change-password").post(verifyJWT, changeCurrentpassword);
 
-userRouter.route("/").post(verifyJWT, getUserChannelProfile);
-userRouter.route("/").post(verifyJWT, getWatchHistory);
+userRouter.route("/:username").get(verifyJWT, getUserChannelProfile);
+userRouter.route("/watch-history").get(verifyJWT, getWatchHistory);
 
 export default userRouter;
