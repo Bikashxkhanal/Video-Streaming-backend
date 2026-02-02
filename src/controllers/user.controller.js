@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 const generateAccessandRefreshToken = async (userId) => {
   try {
     const user = await UserModel.findById(userId);
-    console.log(user, "From access and refresh token");
+    // console.log(user, "From access and refresh token");
 
     const accessToken = await user.generateAccessToken();
     const refreshToken = await user.generateRefreshToken();
@@ -213,4 +213,55 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       )
     );
 });
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+
+const changeCurrentpassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await UserModel.findById(req?.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid password");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: true });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req?.user?._id, "User retrieved successfully"));
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+  if (!fullName || !email) {
+    throw new ApiError(400, "All fields required");
+  }
+
+  const user = await UserModel.findByIdAndUpdate(
+    req?.user?._id,
+    {
+      $set: {
+        fullName,
+        email,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentpassword,
+  getCurrentUser,
+  updateAccountDetails,
+};
