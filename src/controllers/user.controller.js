@@ -344,7 +344,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
   console.log(channel);
   if (!channel?.length) {
-    throw new ApiError(402, "No channel with such username");
+    throw new ApiError(404, "No channel with such username");
   }
 
   return res
@@ -354,6 +354,60 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         200,
         channel?.[0],
         "User channel data fetched successfully!"
+      )
+    );
+});
+
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await UserModel.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req?.user?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "Owner",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addField: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistory,
+        "Watch history retrived successfully"
       )
     );
 });
@@ -368,4 +422,5 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   getUserChannelProfile,
+  getWatchHistory,
 };
