@@ -15,7 +15,7 @@ const videoSchema = new Schema(
       type: String,
       required: true,
     },
-    description: {
+    discription: {
       type: String,
       required: true,
     },
@@ -42,5 +42,10 @@ const videoSchema = new Schema(
 );
 
 videoSchema.plugin(mongooseAggregatePaginate);
+//for searching videos with tile or discription
+videoSchema.index({
+  title: "text",
+  discription: "text",
+});
 
 export const Video = mongoose.model("Video", videoSchema);
