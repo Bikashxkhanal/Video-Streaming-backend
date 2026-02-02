@@ -3,6 +3,7 @@ import { ApiError } from "../utils/apiError.js";
 import { UserModel } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.files.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessandRefreshToken = async (userId) => {
   try {
@@ -67,7 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar is required");
   }
 
-  let user = await UserModel.create({
+  const user = await UserModel.create({
     fullName,
     username: username.toLowerCase(),
     avatar,
@@ -166,4 +167,50 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", options)
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
-export { registerUser, loginUser, logoutUser };
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req?.cookies?.refreshToken || req?.body?.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorised request");
+  }
+
+  const decodedToken = jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+
+  if (!decodedToken) {
+    throw new ApiError(401, "Invalid request token");
+  }
+
+  const user = await UserModel.findById(decodedToken?._id);
+
+  if (!user) {
+    throw new ApiError(401, "Invalid request token");
+  }
+
+  if (user.refreshToken !== incomingRefreshToken) {
+    throw new ApiError(401, "refresh token is expired");
+  }
+
+  const { accessToken, refreshToken } =
+    await user.generateAccessandRefreshToken(user?._id);
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .cookies("accessToken", accessToken, options)
+    .cookies("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { accessToken, refreshToken },
+        "Access token generated successfully"
+      )
+    );
+});
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
