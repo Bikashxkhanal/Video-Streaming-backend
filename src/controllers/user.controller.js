@@ -7,8 +7,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const generateAccessandRefreshToken = async (userId) => {
   try {
     const user = await UserModel.findById(userId);
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    console.log(user, "From access and refresh token");
+
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
@@ -94,14 +96,17 @@ const loginUser = asyncHandler(async (req, res) => {
   //send  cookies
   //grant login with response
 
-  const { email, username, password } = req.body;
+  console.log(req.body);
+
+  const { username, email, password } = req.body;
   if (!email && !username) {
     throw new ApiError(400, "Username or email is required");
   }
 
-  const user = UserModel.findOne({
+  const user = await UserModel.findOne({
     $or: [{ email }, { username }],
   });
+  console.log(user);
 
   if (!user) {
     throw new ApiError(404, "No user of such detail");
@@ -116,14 +121,16 @@ const loginUser = asyncHandler(async (req, res) => {
     user._id
   );
 
-  const loggedUser = UserModel.findById(user._id).select(
-    "-password -refreshToken "
+  const loggedUser = await UserModel.findById(user._id).select(
+    "-password -refreshToken"
   );
 
   const options = {
     httpOnly: true,
     secure: true,
   };
+
+  console.log(loggedUser);
 
   return res
     .status(200)
@@ -159,4 +166,4 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", options)
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
-export { registerUser, loginUser };
+export { registerUser, loginUser, logoutUser };

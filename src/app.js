@@ -11,7 +11,7 @@ app.use(
   })
 );
 
-//configuration are doneu use app.use
+//configuration are done useng app.use :: use app.use
 app.use(
   express.json({
     // for file submmited like photos
