@@ -3,6 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/ApiResponse";
 import { Video } from "../models/video.model.js";
+import { isNumberObject } from "util/types";
+import mongoose from "mongoose";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const {
@@ -20,6 +22,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   if (userId?.trim() !== "") {
     //first pipeLine to filter the vides if the userId is given(if userId is there filter videos and pass the videso of that uesr only based on that, if not pass all the videos to next stage)
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new ApiError(400, "Invalid userid");
+      return;
+    }
     pipeline.push({
       $match: {
         $expr: {
@@ -28,7 +34,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
               $eq: [userId, null],
             },
             {
-              $eq: ["owner", userId],
+              $eq: ["owner", new mongoose.Types.ObjectId(userId)],
             },
           ],
         },
@@ -48,7 +54,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
   }
 
   if (sortBy?.trim() !== "") {
-    const sortDirection = sortType === "asc" ? 1 : -1;
+    //third pipeline sorting by sortBy and using the direction on
+    const sortDirection = sortType === "asc" || "" ? 1 : -1;
     pipeline.push({
       $sort: {
         sortBy: sortDirection,
@@ -57,14 +64,14 @@ const getAllVideos = asyncHandler(async (req, res) => {
     });
   }
 
-  const startPoint = (page - 1) * 10;
+  const startPoint = (Number(page) - 1) * 10;
 
   pipeline.push(
     {
       $skip: startPoint,
     },
     {
-      $limit: limit,
+      $limit: Number(limit),
     },
     {
       $project: {
@@ -77,6 +84,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
   );
 
   const allVideos = await Video.aggregate(pipeline);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, allVideos, "All videos are retrieved!"));
 });
 
 const getVideoById = asyncHandler(async (req, res) => {});
