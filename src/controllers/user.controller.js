@@ -4,6 +4,7 @@ import { UserModel } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.files.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessandRefreshToken = async (userId) => {
   try {
@@ -194,8 +195,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "refresh token is expired");
   }
 
-  const { accessToken, refreshToken } =
-    await user.generateAccessandRefreshToken(user?._id);
+  const { accessToken, refreshToken } = await generateAccessandRefreshToken(
+    user?._id
+  );
   const options = {
     httpOnly: true,
     secure: true,
@@ -203,8 +205,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .cookies("accessToken", accessToken, options)
-    .cookies("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
         200,
@@ -232,7 +234,13 @@ const changeCurrentpassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(new ApiResponse(200, req?.user?._id, "User retrieved successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { userId: req?.user?._id },
+        "User retrieved successfully"
+      )
+    );
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -277,7 +285,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
   ).select("-password -refreshToken");
 
-  return req
+  return res
     .status(200)
     .json(new ApiResponse(200, user, "User avatar updated successfully"));
 });
@@ -287,6 +295,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   if (!username?.trim()) {
     throw new ApiError(400, "UserName is missing");
   }
+  // console.log(username);
 
   const channel = await UserModel.aggregate([
     {
@@ -294,7 +303,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         username: username?.toLowerCase(),
       },
     },
-
     {
       $lookup: {
         from: "subsriptions",
@@ -342,9 +350,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     },
   ]);
 
-  console.log(channel);
+  // console.log(channel);
   if (!channel?.length) {
-    throw new ApiError(404, "No channel with such username");
+    throw new ApiError(404, "No channel with such {watch history} username");
   }
 
   return res
@@ -359,6 +367,18 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
+  console.log("Bikash");
+
+  console.log(req.user || "Bikash");
+  const { userName } = req.params;
+  if (userName?.trim() === "") {
+    throw new ApiError(400, "Username is missing");
+  }
+
+  if (userName !== req.user?._id) {
+    throw new ApiError(404, "Page not found");
+  }
+
   const user = await UserModel.aggregate([
     {
       $match: {
@@ -377,7 +397,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
               from: "users",
               localField: "owner",
               foreignField: "_id",
-              as: "Owner",
+              as: "owner",
               pipeline: [
                 {
                   $project: {
@@ -390,7 +410,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             },
           },
           {
-            $addField: {
+            $addFields: {
               owner: {
                 $first: "$owner",
               },
@@ -400,6 +420,8 @@ const getWatchHistory = asyncHandler(async (req, res) => {
       },
     },
   ]);
+
+  console.log(user[0].watchHistory);
 
   return res
     .status(200)

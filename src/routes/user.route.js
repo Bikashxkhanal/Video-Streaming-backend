@@ -51,6 +51,6 @@ userRouter
 userRouter.route("/change-password").post(verifyJWT, changeCurrentpassword);
 
 userRouter.route("/:username").get(verifyJWT, getUserChannelProfile);
-userRouter.route("/watch-history").get(verifyJWT, getWatchHistory);
+userRouter.route("/:username/watch-history").get(verifyJWT, getWatchHistory);
 
 export default userRouter;
