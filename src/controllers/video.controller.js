@@ -6,6 +6,7 @@ import { Video } from "../models/video.model.js";
 import { isNumberObject } from "util/types";
 import mongoose from "mongoose";
 import { pipeline } from "stream";
+import { uploadOnCloudinary } from "../utils/Cloudinary.files.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const {
@@ -34,7 +35,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
               $eq: [userId, null],
             },
             {
-              $eq: ["owner", new mongoose.Types.ObjectId(userId)],
+              $eq: ["owner", userId],
             },
           ],
         },
@@ -142,7 +143,57 @@ const getVideoById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video retrieved Successfully!"));
 });
 
-const publishAVideo = asyncHandler(async (req, res) => {});
+const publishAVideo = asyncHandler(async (req, res) => {
+  const { title, discription } = req.body;
+  //get detail about video from form
+  //upload thumbnail and video handles by multer
+  //get cloudinary url of thumbnail and video
+  //get userId from req.user
+
+  //get details ,
+  //upload on cloudingary image and video ,
+  // get urls
+  //validates all things
+  //create a video object
+  //add on db
+
+  if (title?.trim() === "" || discription?.trim() === "") {
+    throw new ApiError(400, "Title and discription are required");
+  }
+
+  //get video and thumbnail from the server
+  const thumbnailLoalPath = req.files?.thumbnail?.[0]?.path;
+  const videoLocalPath = req.files?.video?.[0]?.path;
+
+  if (!thumbnailLoalPath) {
+    throw new ApiError(400, "Thumbnail is required");
+  }
+
+  if (!videoLocalPath) {
+    throw new ApiError(400, "Video is required");
+  }
+
+  //upload on cloudinary
+  const thumbnail = await uploadOnCloudinary(thumbnailLoalPath);
+  const video = await uploadOnCloudinary(videoLocalPath);
+
+  if (!thumbnail && !video) {
+    throw new ApiError(500, "Error uploading thumbnail and videos");
+  }
+
+  await Video.create({
+    owner: user._id,
+    thumbnail: thumbnail.url,
+    videoFile: video.url,
+    title,
+    discription,
+    duration: video.duration,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Video uploaded successfully!"));
+});
 
 const updateVideo = asyncHandler(async (req, res) => {});
 
