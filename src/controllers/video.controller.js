@@ -1,7 +1,7 @@
 import fs from "fs";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video } from "../models/video.model.js";
 import { isNumberObject } from "util/types";
 import mongoose from "mongoose";
@@ -22,37 +22,37 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   const pipeline = [];
 
-  if (userId?.trim() !== "") {
-    //first pipeLine to filter the vides if the userId is given(if userId is there filter videos and pass the videso of that uesr only based on that, if not pass all the videos to next stage)
+  //first pipeLine to filter the vides if the userId is given(if userId is there filter videos and pass the videso of that uesr only based on that, if not pass all the videos to next stage)
+  if (userId) {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       throw new ApiError(400, "Invalid userid");
     }
-    pipeline.push({
-      $match: {
-        $expr: {
-          $or: [
-            {
-              $eq: [userId, null],
-            },
-            {
-              $eq: ["owner", userId],
-            },
-          ],
-        },
-      },
-    });
   }
-
-  if (query?.trim() !== "") {
-    //second pipeline sorting by query on title or discripiont
-    pipeline.push({
-      $match: {
-        $text: {
-          $search: query,
-        },
+  pipeline.push({
+    $match: {
+      $expr: {
+        $or: [
+          {
+            $eq: [userId, null],
+          },
+          {
+            $eq: ["owner", userId],
+          },
+        ],
       },
-    });
-  }
+    },
+  });
+  // TODO: $match and $text are not accepted in second pipeline, need to rethink about this
+  // if (query?.trim() !== "") {
+  //   //second pipeline sorting by query on title or discripiont
+  //   pipeline.push({
+  //     $match: {
+  //       $text: {
+  //         $search: query,
+  //       },
+  //     },
+  //   });
+  // }
 
   if (sortBy?.trim() !== "") {
     //third pipeline sorting by sortBy and using the direction on
@@ -85,9 +85,22 @@ const getAllVideos = asyncHandler(async (req, res) => {
   );
 
   const allVideos = await Video.aggregate(pipeline);
-  return res
-    .status(200)
-    .json(new ApiResponse(200, allVideos, "All videos are retrieved!"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        meta: {
+          page,
+          limit,
+          query,
+          sortBy,
+          sortType,
+        },
+        data: allVideos,
+      },
+      "All videos are retrieved!"
+    )
+  );
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
