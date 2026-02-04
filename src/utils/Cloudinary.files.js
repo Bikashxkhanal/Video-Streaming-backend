@@ -21,11 +21,11 @@ const uploadOnCloudinary = async (localFilePath) => {
       });
 
     fs.unlinkSync(localFilePath);
-    console.log("File Upload ", uploadResult);
-    return uploadResult.url;
+    // console.log("File Upload ", uploadResult);
+    return uploadResult;
   } catch (error) {
     fs.unlinkSync(localFilePath); // unlink the temporty file saved in local server when the upload fails
-    console.log(error);
+    // console.log(error);
     return null;
   }
 };
