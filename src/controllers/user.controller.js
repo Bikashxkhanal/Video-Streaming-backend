@@ -75,7 +75,7 @@ const registerUser = asyncHandler(async (req, res) => {
     avatar,
     email,
     password,
-    coverImage: coverImage || "",
+    coverImage: coverImage.url || "",
   });
 
   const createdUser = await UserModel.findById(user._id).select(
