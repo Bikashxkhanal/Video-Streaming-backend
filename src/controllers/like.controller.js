@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { Like } from "../models/likes.model.js";
 import { Video } from "../models/video.model.js";
 import { UserModel } from "../models/user.model.js";
+import { Tweet } from "../models/tweet.model.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -58,9 +59,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid comment");
   }
 
-  const commentStatus = await Comment.findOne({
-    _id: commentId,
-  });
+  const commentStatus = await Comment.findById(commentId);
 
   if (!commentStatus) {
     throw new ApiError(400, "Comment doesnot exist with such id");
@@ -84,7 +83,33 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Comment like status changed!"));
 });
 
-const toggleTweetLike = asyncHandler(async (req, res) => {});
+const toggleTweetLike = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
+  if (tweetId?.trim() === "") {
+    throw new ApiError(400, "Invalid tweet Id");
+  }
+
+  //check wether the tweet exist or not
+  const tweetStatus = await Tweet.findById(tweetId);
+  if (!tweetStatus) {
+    throw new ApiError(400, "Invalid tweet Id");
+  }
+
+  //check if the tweetlike exist then delete if not , addd new like to tweet
+  const tweetLikeStatus = await Tweet.findOneAndDelete({
+    tweet: tweetId,
+  });
+  if (!tweetLikeStatus) {
+    await Tweet.create({
+      tweet: tweetId,
+      likedBy: req?.user?._id,
+    });
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Tweet Like changed successfully!"));
+});
 const getLikedVideos = asyncHandler(async (req, res) => {});
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
