@@ -5,6 +5,7 @@ import { Like } from "../models/likes.model.js";
 import { Video } from "../models/video.model.js";
 import { UserModel } from "../models/user.model.js";
 import { Tweet } from "../models/tweet.model.js";
+import mongoose from "mongoose";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -110,6 +111,89 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "Tweet Like changed successfully!"));
 });
-const getLikedVideos = asyncHandler(async (req, res) => {});
+
+const getLikedVideos = asyncHandler(async (req, res) => {
+  //get all the liked videos of the current user
+  //get the user
+  //check how many videos exist the user has liked,
+  //lookup the vides and add the video details
+  //look up to creator who added the video and add the crator necessary information
+  //list of video document which has video details and the crator details
+
+  const userId = mongoose.Types.ObjectId.isValid(req?.user?._id)
+    ? new mongoose.Types.ObjectId(req?.user?._id)
+    : null;
+
+  if (!userId) {
+    throw new ApiError(400, "Not logged In");
+  }
+
+  const likedVideos = await Like.pipeline([
+    //filter the user likes by the user and the only liked videos
+    {
+      $match: {
+        likedBy: userId,
+        tweet: null,
+        comment: null,
+      },
+      $project: {
+        likedBy: 1,
+        video: 1,
+      },
+    },
+
+    //recives only liked videos by the usser
+
+    {
+      $lookup: {
+        from: "videos",
+        localField: "video",
+        foreignField: "_id",
+        as: "LikesVideos",
+        pipeline: [
+          //get the user details of each videos
+          {
+            $project: {
+              title: 1,
+              discription: 1,
+              avatar: 1,
+              videoFile: 1,
+              duration: 1,
+              owner: 1,
+            },
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "videoOwnerDetails",
+              pipeline: [
+                {
+                  $addFields: {
+                    ownerDetails: {
+                      $first: "$videoOwnerDetails",
+                    },
+                  },
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+
+            $,
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, likedVideos, "Liked videos fetched successfully!")
+    );
+});
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
