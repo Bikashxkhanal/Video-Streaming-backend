@@ -29,8 +29,10 @@ app.use(cookieParser()); // cookies can be set and removed by the server
 //routes import
 import userRouter from "./routes/user.route.js";
 import { videoRouter } from "./routes/video.route.js";
+import { CommentRouter } from "./routes/comment.route.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
+app.use('api/v1/comments', CommentRouter);
 
 export { app };

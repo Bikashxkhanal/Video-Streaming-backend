@@ -11,6 +11,7 @@ const commentSchema = new Schema(
       ref: "Video",
     },
 
+    //comment owner not video owner
     owner: {
       type: Schema.Types.ObjectId,
       ref: "User",
