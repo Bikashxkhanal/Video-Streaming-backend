@@ -9,6 +9,9 @@ import { Router } from 'express'
 
 const subscriptionRouter = new Router();
 
-subscriptionRouter.route("/all").get(verifyJWT, )
+subscriptionRouter.route("/all").get(verifyJWT, getAllSubscribedChannel );
+subscriptionRouter.route("/:id").get(verifyJWT, isChannelSubscribed);
+subscriptionRouter.route("/subscribe").post(verifyJWT, togglesubcription);
+subscriptionRouter.route("/unsubscribe").delete(verifyJWT, togglesubcription);
 
 export {subscriptionRouter}
