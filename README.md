@@ -114,16 +114,6 @@ Supports:
 * Optimized data fetching via aggregation
 * Scalable schema design
 * CDN-backed media delivery
----
-## 🚧 Future Enhancements
-
-⭐ Likes & comments
-⭐ Playlists
-⭐ Role-based access
-⭐ Streaming optimization
-⭐ Refresh token rotation
-
----
 
 ## 👨‍💻 Author
 
