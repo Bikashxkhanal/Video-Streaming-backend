@@ -15,21 +15,6 @@
 
 ---
 
-## 📂 Project Structure
-
-```
-src/
-├── controllers/   # Business logic
-├── models/        # Mongoose schemas
-├── routes/v1/     # Versioned APIs
-├── middlewares/   # Auth, upload, error handling
-├── utils/         # Cloudinary, JWT helpers
-├── app.js
-└── server.js
-```
-
----
-
 ## 🔐 Authentication (JWT)
 
 ### ✅ Integrated Features
@@ -57,46 +42,7 @@ src/
 
 All user-related media is handled via **Multer** and stored on **Cloudinary**.
 
-### 🔗 Endpoints
-
-```
-POST   /api/v1/users/register
-POST   /api/v1/users/login
-POST   /api/v1/users/logout
-PATCH  /api/v1/users/update
-GET    /api/v1/users/watch-history
-```
-
----
-
-## 🎥 Video Module (v1)
-
-### ✅ Integrated Features
-
-* Publish videos
-* Retrieve all videos
-* Fetch single video by ID
-* Update video details
-* Delete videos
-
-### 🎞️ Media Assets
-
-* Video file
-* Video thumbnail
-
 Video uploads are processed using **Multer** and stored on **Cloudinary**.
-
-### 🔗 Endpoints
-
-```
-POST   /api/v1/videos/publish
-GET    /api/v1/videos
-GET    /api/v1/videos/:id
-PATCH  /api/v1/videos/:id
-DELETE /api/v1/videos/:id
-```
-
----
 
 ## 📊 MongoDB Aggregation Pipelines
 
